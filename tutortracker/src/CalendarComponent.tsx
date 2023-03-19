@@ -5,12 +5,13 @@ import { Availability } from './Availability';
 import CreateSlotForm from './CreateSlotForm';
 
 interface CalendarComponentProps {
+  tutorId: number;
   availability: Availability[];
   onSlotSelected: (selectedSlot: Availability) => void;
   onSlotCreated: (newSlot: Availability) => void;
 }
 
-function CalendarComponent({ availability, onSlotSelected, onSlotCreated }: CalendarComponentProps) {
+function CalendarComponent({ tutorId, availability, onSlotSelected, onSlotCreated }: CalendarComponentProps) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   const handleDateChange = (date: Date | Date[]) => {
@@ -31,7 +32,7 @@ function CalendarComponent({ availability, onSlotSelected, onSlotCreated }: Cale
         onChange={handleDateChange}
         value={selectedDate}
         tileContent={({ date }) => {
-          const availableSlots = availability.filter((slot) => new Date(slot.startTime).toDateString() === date.toDateString());
+          const availableSlots = availability ? availability.filter((slot) => new Date(slot.startTime).toDateString() === date.toDateString()) : [];
           return (
             <div>
               {availableSlots.map((slot) => (
@@ -45,9 +46,7 @@ function CalendarComponent({ availability, onSlotSelected, onSlotCreated }: Cale
       />
       {/* Add a form for tutors to create available time slots */}
       <h2>Create Available Time Slot</h2>
-      <form>
-        <CreateSlotForm tutorId={tutor.Id} onCreateSlot={handleSlotCreation} />
-      </form>
+        <CreateSlotForm tutorId={tutorId} onCreateSlot={handleSlotCreation} />
     </div>
   );
 }

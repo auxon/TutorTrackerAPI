@@ -32,6 +32,12 @@ function Appointments() {
   };
 
   useEffect(() => {
+    fetch('https://localhost:7189/api/availability')
+      .then(response => response.json())
+      .then(data => setAvailability(data));
+  }, []);
+
+  useEffect(() => {
     fetch('https://localhost:7189/api/appointment')
       .then(response => response.json())
       .then(data => setAppointments(data));
@@ -109,6 +115,7 @@ function Appointments() {
         <label>
             Date and Time:
             <CalendarComponent 
+              tutorId={newAppointment.tutorId!}
               availability={availability}
               onSlotCreated={handleSlotCreated}
               onSlotSelected={handleSlotSelected}

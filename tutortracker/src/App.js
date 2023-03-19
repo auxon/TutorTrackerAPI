@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import './App.css';
 import Appointments from './Appointments';
-import CalendarComponent from './CalendarComponent';
 import CreateUserAccount from './CreateUserAccount';
 import LoginComponent from './LoginComponent';
 import ProfileComponent from './ProfileComponent';
@@ -43,6 +42,7 @@ function App() {
             <label className="create-account-link" onClick={handleCreateAccount}>
               Create Account
             </label>
+            <span> or  </span>
             <label className="login-link" onClick={handleLogin}>
               Login
             </label>
@@ -64,10 +64,9 @@ function App() {
       {showProfilePage && (
         <ProfileComponent user={loggedInUser} onRegisterAsTutor={handleRegisterAsTutor} onClose={() => setShowProfilePage(false)} />
       )}
-      {!showProfilePage && (
+      {!showProfilePage && loggedInUser && (
         <>
           <Appointments />
-          <CalendarComponent />
         </>
       )}
     </div>

@@ -26,7 +26,7 @@ function CreateUserAccount() {
     event.preventDefault();
 
     // Call the API to create the user account
-    fetch("https://localhost:7189/api/users", {
+    fetch("https://localhost:7189/api/user", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newUser),
