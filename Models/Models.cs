@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 public class User
 {
     public int Id { get; set; }
@@ -5,6 +7,7 @@ public class User
     public string FirstName { get; set; }
     public string LastName { get; set; }
     public string Email { get; set; }
+    public User() { }
     public User(string userName, string firstName, string lastName, string email) {
       Username = userName;
       FirstName = firstName;
@@ -15,35 +18,39 @@ public class User
 
 public class Tutor
 {
-    public Tutor(User user, string availability, decimal hourlyRate, string subject)
+    public Tutor() { }
+    public Tutor(int userId, string availability, decimal hourlyRate, string subject)
     {
-        User = user;
+        UserId = userId;
         Availability = availability;
         HourlyRate = hourlyRate;
         Subject = subject;
     }
 
     public int Id { get; set; }
-    public User User { get; set; }
+    public int UserId { get; set; }
     public string Availability { get; set; }
     public string Subject { get; set; }
     public decimal HourlyRate { get; set; }
+
 }
 
 public class Appointment
 {
     public int Id { get; set; }
-    public User Student { get; set; }
-    public Tutor Tutor { get; set; }
+    public int StudentId { get; set; }
+    public int TutorId { get; set; }
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
     public string Status { get; set; }
     public decimal Amount { get; set; }
 
-    public Appointment(Tutor tutor, User student, DateTime startTime, DateTime endTime, decimal amount, string status)
+    public Appointment() { }
+
+    public Appointment(int tutorId, int studentId, DateTime startTime, DateTime endTime, decimal amount, string status)
     {
-        Tutor = tutor;
-        Student = student;
+        TutorId = tutorId;
+        StudentId = studentId;
         StartTime = startTime;
         EndTime = endTime;
         Amount = amount;
