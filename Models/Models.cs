@@ -7,12 +7,17 @@ public class User
     public string FirstName { get; set; }
     public string LastName { get; set; }
     public string Email { get; set; }
+    public ICollection<Appointment> Appointments { get; set; }
+    public string Password { get; set; }
+
     public User() { }
-    public User(string userName, string firstName, string lastName, string email) {
-      Username = userName;
-      FirstName = firstName;
-      LastName = lastName;
-      Email = email;
+    public User(string userName, string password, string firstName, string lastName, string email)
+    {
+        Username = userName;
+        Password = password;
+        FirstName = firstName;
+        LastName = lastName;
+        Email = email;
     }
 }
 
@@ -44,6 +49,7 @@ public class Appointment
     public DateTime EndTime { get; set; }
     public string Status { get; set; }
     public decimal Amount { get; set; }
+    public User Student { get; set; }
 
     public Appointment() { }
 

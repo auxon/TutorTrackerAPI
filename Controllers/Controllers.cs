@@ -1,6 +1,13 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using TutorTracker.Data;
+using TutorTracker.Repositories;
+
 
 [Route("api/[controller]")]
 [ApiController]
@@ -71,7 +78,7 @@ public class UserController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> UserTutor(int id)
+    public async Task<IActionResult> DeleteUser(int id)
     {
         var user = await _context.Users.FindAsync(id);
         if (user == null)
@@ -269,3 +276,61 @@ public class AppointmentController : ControllerBase
         return _context.Appointments.Any(e => e.Id == id);
     }
 }
+
+[ApiController]
+[Route("api/auth")]
+public class AuthController : ControllerBase
+{
+    private readonly IConfiguration _configuration;
+    private readonly IUserRepository _userRepository;
+
+    public AuthController(IConfiguration configuration, IUserRepository userRepository)
+    {
+        _configuration = configuration;
+        _userRepository = userRepository;
+    }
+
+    [HttpPost("login")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Login([FromBody] LoginModel loginModel)
+    {
+        // Check if username and password are valid
+        var user = await _userRepository.GetUserByUsernameAndPassword(loginModel.Username, loginModel.Password);
+        if (user == null)
+        {
+            return BadRequest("Invalid username or password");
+        }
+
+        // Generate JWT token
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.ASCII.GetBytes(_configuration["Jwt:SecretKey"]!);
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(new Claim[]
+            {
+                    new Claim(ClaimTypes.Name, user.Id.ToString())
+            }),
+            Expires = DateTime.UtcNow.AddDays(7),
+            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key),
+                SecurityAlgorithms.HmacSha256Signature)
+        };
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+
+        return Ok(new
+        {
+            Id = user.Id,
+            Email = user.Email,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Username = user.Username,
+            Token = tokenHandler.WriteToken(token)
+        });
+    }
+}
+
+public class LoginModel
+{
+    public string Username { get; set; }
+    public string Password { get; set; }
+}
+

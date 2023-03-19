@@ -1,8 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ChangeEvent } from 'react';
+import CalendarComponent from './CalendarComponent';
+import { Availability } from './Availability';
+
+interface Appointment {
+  id: number;
+  tutorId: number;
+  studentId: number;
+  startTime: string;
+  endTime: string;
+}
+
+interface NewAppointment {
+  tutorId?: number;
+  studentId?: string;
+  date?: string;
+  startTime?: string;
+  endTime?: string;
+}
 
 function Appointments() {
-  const [appointments, setAppointments] = useState([]);
-  const [newAppointment, setNewAppointment] = useState({});
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [newAppointment, setNewAppointment] = useState<NewAppointment>({});
+  const [availability, setAvailability] = useState<Availability[]>([]);
+
+  const handleSlotSelected = (selectedSlot: Availability) => {
+    // Implement the logic for handling the selected time slot
+  };
+
+  const handleSlotCreated = (newSlot: Availability) => {
+    // Implement the logic for handling new available time slot creation
+  };
 
   useEffect(() => {
     fetch('https://localhost:7189/api/appointment')
@@ -10,7 +37,7 @@ function Appointments() {
       .then(data => setAppointments(data));
   }, []);
 
-  const handleInputChange = event => {
+  const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setNewAppointment({ ...newAppointment, [name]: value });
   };
@@ -22,13 +49,13 @@ function Appointments() {
       body: JSON.stringify(newAppointment)
     })
       .then(response => response.json())
-      .then(data => {
+      .then((data: Appointment) => {
         setAppointments([...appointments, data]);
         setNewAppointment({});
       });
   };
 
-  const handleDeleteAppointment = id => {
+  const handleDeleteAppointment = (id: number) => {
     fetch(`https://localhost:7189/api/appointment/${id}`, {
       method: 'DELETE'
     })
@@ -75,18 +102,17 @@ function Appointments() {
         </label>
         <br />
         <label>
-          Student Name:
-          <input type="text" name="studentName" value={newAppointment.studentName} onChange={handleInputChange} />
+          Student ID:
+          <input type="number" name="studentId" value={newAppointment.studentId} onChange={handleInputChange} />
         </label>
         <br />
         <label>
-          Date:
-          <input type="date" name="date" value={newAppointment.date} onChange={handleInputChange} />
-        </label>
-        <br />
-        <label>
-          Duration:
-          <input type="number" name="duration" value={newAppointment.duration} onChange={handleInputChange} />
+            Date and Time:
+            <CalendarComponent 
+              availability={availability}
+              onSlotCreated={handleSlotCreated}
+              onSlotSelected={handleSlotSelected}
+              />
         </label>
         <br />
         <button type="button" onClick={handleCreateAppointment}>Create</button>

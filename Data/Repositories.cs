@@ -113,47 +113,54 @@ namespace TutorTracker.Repositories
         void AddUser(User user);
         void UpdateUser(User user);
         void DeleteUser(int id);
+        Task<User> GetUserByUsernameAndPassword(string username, string password);
     }
 
     public class UserRepository : IUserRepository
     {
-        private readonly ApplicationDbContext _context;
+        private readonly ApplicationDbContext _dbContext;
 
         public UserRepository(ApplicationDbContext context)
         {
-            _context = context;
+            _dbContext = context;
         }
 
         public IEnumerable<User> GetAllUsers()
         {
-            return _context.Users.ToList();
+            return _dbContext.Users.ToList();
         }
 
         public User GetUserById(int id)
         {
-            return _context.Users.FirstOrDefault(u => u.Id == id);
+            return _dbContext.Users.FirstOrDefault(u => u.Id == id);
         }
 
         public void AddUser(User user)
         {
-            _context.Users.Add(user);
-            _context.SaveChanges();
+            _dbContext.Users.Add(user);
+            _dbContext.SaveChanges();
         }
 
         public void UpdateUser(User user)
         {
-            _context.Users.Update(user);
-            _context.SaveChanges();
+            _dbContext.Users.Update(user);
+            _dbContext.SaveChanges();
         }
 
         public void DeleteUser(int id)
         {
-            var user = _context.Users.FirstOrDefault(u => u.Id == id);
+            var user = _dbContext.Users.FirstOrDefault(u => u.Id == id);
             if (user != null)
             {
-                _context.Users.Remove(user);
-                _context.SaveChanges();
+                _dbContext.Users.Remove(user);
+                _dbContext.SaveChanges();
             }
         }
+
+        public async Task<User> GetUserByUsernameAndPassword(string username, string password)
+        {
+            return await _dbContext.Users.SingleOrDefaultAsync(u => u.Username == username && u.Password == password);
+        }
+
     }
 }

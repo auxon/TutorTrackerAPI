@@ -19,8 +19,8 @@ namespace TutorTracker.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Appointment>()
-                .HasOne<User>()
-                .WithMany()
+                .HasOne<User>(a => a.Student)
+                .WithMany(u => u.Appointments)
                 .HasForeignKey(a => a.StudentId)
                 .OnDelete(DeleteBehavior.NoAction);
 
