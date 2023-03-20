@@ -14,7 +14,7 @@ function CreateUserAccount() {
     lastName: "",
     email: "",
     username: "",
-    password: "",
+    password: ""
   });
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -26,7 +26,7 @@ function CreateUserAccount() {
     event.preventDefault();
 
     // Call the API to create the user account
-    fetch("https://localhost:7189/api/user", {
+    fetch("https://localhost:7189/api/account/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newUser),
@@ -53,7 +53,7 @@ function CreateUserAccount() {
       lastName: "",
       email: "",
       username: "",
-      password: "",
+      password: ""
     });
   };
 

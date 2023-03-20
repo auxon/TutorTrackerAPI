@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -6,7 +7,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using TutorTracker.Data;
-using TutorTracker.Repositories;
+using Microsoft.Extensions.Configuration;
 
 
 [Route("api/[controller]")]
@@ -27,7 +28,7 @@ public class UserController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<User>> GetUser(int id)
+    public async Task<ActionResult<User>> GetUser(string id)
     {
         var user = await _context.Users.FindAsync(id);
 
@@ -49,7 +50,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateUser(int id, User user)
+    public async Task<IActionResult> UpdateUser(string id, User user)
     {
         if (id != user.Id)
         {
@@ -92,7 +93,7 @@ public class UserController : ControllerBase
         return NoContent();
     }
 
-    private bool UserExists(int id)
+    private bool UserExists(string id)
     {
         return _context.Users.Any(e => e.Id == id);
     }
@@ -277,60 +278,109 @@ public class AppointmentController : ControllerBase
     }
 }
 
+[Route("api/[controller]")]
 [ApiController]
-[Route("api/auth")]
-public class AuthController : ControllerBase
+public class AccountController : ControllerBase
 {
+    private readonly UserManager<User> _userManager;
+    private readonly SignInManager<User> _signInManager;
     private readonly IConfiguration _configuration;
-    private readonly IUserRepository _userRepository;
 
-    public AuthController(IConfiguration configuration, IUserRepository userRepository)
+
+    public AccountController(UserManager<User> userManager, SignInManager<User> signInManager, IConfiguration configuration)
     {
+        _userManager = userManager;
+        _signInManager = signInManager;
         _configuration = configuration;
-        _userRepository = userRepository;
     }
 
-    [HttpPost("login")]
+    // Register
+    [HttpPost("register")]
     [AllowAnonymous]
-    public async Task<IActionResult> Login([FromBody] LoginModel loginModel)
+    public async Task<IActionResult> Register(RegisterModel model)
     {
-        // Check if username and password are valid
-        var user = await _userRepository.GetUserByUsernameAndPassword(loginModel.Username, loginModel.Password);
-        if (user == null)
+        if (ModelState.IsValid)
         {
-            return BadRequest("Invalid username or password");
+            var user = new User
+            {
+                UserName = model.Email,
+                Email = model.Email,
+                FirstName = model.FirstName,
+                LastName = model.LastName,
+            };
+
+            var result = await _userManager.CreateAsync(user, model.Password);
+
+            if (result.Succeeded)
+            {
+                await _signInManager.SignInAsync(user, isPersistent: false);
+                return Ok(new { token = GenerateJwtToken(user) }); // Return the token
+            }
+
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
         }
 
-        // Generate JWT token
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(_configuration["Jwt:SecretKey"]!);
-        var tokenDescriptor = new SecurityTokenDescriptor
-        {
-            Subject = new ClaimsIdentity(new Claim[]
-            {
-                    new Claim(ClaimTypes.Name, user.Id.ToString())
-            }),
-            Expires = DateTime.UtcNow.AddDays(7),
-            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key),
-                SecurityAlgorithms.HmacSha256Signature)
-        };
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-
-        return Ok(new
-        {
-            Id = user.Id,
-            Email = user.Email,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            Username = user.Username,
-            Token = tokenHandler.WriteToken(token)
-        });
+        return BadRequest(ModelState);
     }
+
+    // Login
+    [HttpPost("login")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Login(LoginModel model)
+    {
+        if (ModelState.IsValid)
+        {
+            var result = await _signInManager.PasswordSignInAsync(model.Email!, model.Password, model.RememberMe, lockoutOnFailure: false);
+
+            if (result.Succeeded)
+            {
+                return Ok(); // or return a token for authenticated requests
+            }
+
+            ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    // Logout
+    [HttpPost("logout")]
+    [Authorize]
+    public async Task<IActionResult> Logout()
+    {
+        await _signInManager.SignOutAsync();
+        return Ok();
+    }
+
+    private string GenerateJwtToken(User user)
+    {
+        var claims = new List<Claim>
+    {
+        new Claim(JwtRegisteredClaimNames.Sub, user.UserName!),
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+        new Claim(JwtRegisteredClaimNames.Email, user.Email!),
+        new Claim("id", user.Id)
+    };
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:SecretKey"]!));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var expires = DateTime.Now.AddDays(Convert.ToDouble(_configuration["Jwt:ExpireDays"]));
+
+        var token = new JwtSecurityToken(
+            _configuration["Jwt:Issuer"],
+            _configuration["Jwt:Audience"],
+            claims,
+            expires: expires,
+            signingCredentials: creds
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
 }
 
-public class LoginModel
-{
-    public string Username { get; set; }
-    public string Password { get; set; }
-}
+
 
